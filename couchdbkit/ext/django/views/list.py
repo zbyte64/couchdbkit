@@ -16,7 +16,7 @@ class MultipleObjectMixin(listview.MultipleObjectMixin):
             if hasattr(queryset, '_clone'):
                 queryset = queryset._clone()
         elif self.model is not None:
-            queryset = self.model
+            queryset = lambda **kwargs: self.model.view('_all_docs', **kwargs)
         else:
             raise ImproperlyConfigured(u"'%s' must define 'queryset' or 'model'"
                                        % self.__class__.__name__)

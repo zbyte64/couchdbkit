@@ -3,7 +3,7 @@ from django.views.generic import edit as editview
 
 from detail import SingleObjectMixin, SingleObjectTemplateResponseMixin, BaseDetailView
 
-from coudbdbkit.ext.django.forms import fields_for_document, DocumentForm
+from couchdbkit.ext.django.forms import fields_for_document, DocumentForm
 
 class DocumentFormMixin(editview.FormMixin, SingleObjectMixin):
     def get_form_class(self):
@@ -24,10 +24,11 @@ class DocumentFormMixin(editview.FormMixin, SingleObjectMixin):
                 # Try to get a queryset and extract the model class
                 # from that
                 model = self.get_queryset().model
-            fields = fields_for_document(model)
+            #fields = fields_for_document(model)
             class CustomDocumentForm(DocumentForm):
-                pass
-            CustomDocumentForm.base_fields.update(fields)
+                class Meta:
+                    document = model
+            #CustomDocumentForm.base_fields.update(fields)
             return CustomDocumentForm
 
     def get_form_kwargs(self):

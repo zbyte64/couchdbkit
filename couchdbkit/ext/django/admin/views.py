@@ -111,7 +111,11 @@ class CreateView(DocumentViewMixin, views.CreateView):
     def form_valid(self, form):
         self.object = form.save()
         self.admin.log_addition(self.request, self.object)
-        return HttpResponseRedirect(self.admin.reverse('change', self.object.get_id))
+        if '_continue' in self.request.POST:
+            return HttpResponseRedirect(self.admin.reverse('change', self.object.get_id))
+        if '_addanother' in self.request.POST:
+            return HttpResponseRedirect(self.admin.reverse('add'))
+        return HttpResponseRedirect(self.admin.reverse('index'))
 
 class UpdateView(DocumentViewMixin, views.UpdateView):
     template_suffix = 'change_form'
@@ -139,10 +143,14 @@ class UpdateView(DocumentViewMixin, views.UpdateView):
     def form_valid(self, form):
         self.object = form.save()
         self.admin.log_change(self.request, self.object, '')
-        return HttpResponseRedirect(self.admin.reverse('change', self.object.get_id))
+        if '_continue' in self.request.POST:
+            return HttpResponseRedirect(self.admin.reverse('change', self.object.get_id))
+        if '_addanother' in self.request.POST:
+            return HttpResponseRedirect(self.admin.reverse('add'))
+        return HttpResponseRedirect(self.admin.reverse('index'))
 
 class DeleteView(DocumentViewMixin, views.DetailView):
-    template_suffix = 'delete'
+    template_suffix = 'delete_selected_confirmation'
     
     def get_context_data(self, **kwargs):
         context = views.DetailView.get_context_data(self, **kwargs)
@@ -154,7 +162,7 @@ class DeleteView(DocumentViewMixin, views.DetailView):
         obj = self.get_object()
         object_repr = unicode(obj)
         obj.delete()
-        self.admin.log_deletion(request, object_repr)
+        self.admin.log_deletion(request, obj, object_repr)
         return HttpResponseRedirect(self.admin.reverse('index'))
 
 class HistoryView(DocumentViewMixin, views.ListView):

@@ -61,6 +61,8 @@ class BaseAdmin(object):
         self.model = model
         self.admin_site = admin_site
         self.declared_fieldsets = None
+        self.app_name = model._meta.app_label
+        print self.app_name
     
     def get_urls(self):
         def wrap(view, cacheable=False):
@@ -91,7 +93,7 @@ class BaseAdmin(object):
         return urlpatterns
     
     def urls(self):
-        return self.get_urls()
+        return self.get_urls(), self.app_name, None
     urls = property(urls)
     
     def _media(self):
@@ -202,7 +204,8 @@ class BaseAdmin(object):
         return []
     
     def reverse(self, name, *args, **kwargs):
-        return ''
+        print name, reverse('admin:' + name, args=args, kwargs=kwargs, current_app=self.app_name)
+        return reverse('admin:' + name, args=args, kwargs=kwargs, current_app=self.app_name)
 
 import views
 

@@ -148,6 +148,19 @@ greets::
 
   greets = Greeting.view('greeting/all')
 
+
+Registering a Schema in the Django Admin
+++++++++++++++++++++++++++++++++++++++++
+
+Registering Schema Greeting into the Django Admin::
+
+  from django.contrib import admin
+  from couchdbkit.ext.django.admin.documentadmin import DocumentAdmin
+  from models import Greeting
+  
+  admin.site.register([Greeting], DocumentAdmin)
+
+
 .. _Couchdbkit: http://couchdbkit.org
 .. _API: http://couchdbkit.org/doc/api/
 .. _couchapp:  http://github.com/couchapp/couchapp/tree/

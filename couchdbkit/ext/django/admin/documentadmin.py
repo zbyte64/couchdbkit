@@ -1,11 +1,27 @@
-from django.conf.urls.defaults import patterns, url, include
+from django.conf.urls.defaults import patterns, url
 from django.utils.functional import update_wrapper
-from django.contrib.contenttypes.models import ContentType
 from django.utils.encoding import force_unicode
 from django.core.urlresolvers import reverse
+from django.contrib.admin import widgets
 from django import forms
 
 from couchdbkit.ext.django.paginator import Paginator
+
+FORMFIELD_FOR_FIELD_DEFAULTS = {
+    forms.DateTimeField: {
+        'form_class': forms.SplitDateTimeField,
+        'widget': widgets.AdminSplitDateTime
+    },
+    forms.DateField:       {'widget': widgets.AdminDateWidget},
+    forms.TimeField:       {'widget': widgets.AdminTimeWidget},
+    #models.TextField:       {'widget': widgets.AdminTextareaWidget},
+    #models.URLField:        {'widget': widgets.AdminURLFieldWidget},
+    forms.IntegerField:    {'widget': widgets.AdminIntegerFieldWidget},
+    #models.BigIntegerField: {'widget': widgets.AdminIntegerFieldWidget},
+    forms.CharField:       {'widget': widgets.AdminTextInputWidget},
+    forms.ImageField:      {'widget': widgets.AdminFileWidget},
+    forms.FileField:       {'widget': widgets.AdminFileWidget},
+}
 
 class BaseAdmin(object):
     #class based views
@@ -62,7 +78,9 @@ class BaseAdmin(object):
         self.admin_site = admin_site
         self.declared_fieldsets = None
         self.app_name = model._meta.app_label
-        print self.app_name
+        overrides = FORMFIELD_FOR_FIELD_DEFAULTS.copy()
+        overrides.update(self.formfield_overrides)
+        self.formfield_overrides = overrides
     
     def get_urls(self):
         def wrap(view, cacheable=False):
@@ -204,8 +222,14 @@ class BaseAdmin(object):
         return []
     
     def reverse(self, name, *args, **kwargs):
-        print name, reverse('admin:' + name, args=args, kwargs=kwargs, current_app=self.app_name)
-        return reverse('admin:' + name, args=args, kwargs=kwargs, current_app=self.app_name)
+        return reverse('%s:%s' % (self.admin_site.name, name), args=args, kwargs=kwargs, current_app=self.app_name)
+    
+    def formfield_for_field(self, field, **kwargs):
+        if field in self.formfield_overrides:
+            opts = dict(self.formfield_overrides[field])
+            field = opts.pop('form_class', field)
+            kwargs = dict(opts, **kwargs)
+        return field(**kwargs)
 
 import views
 

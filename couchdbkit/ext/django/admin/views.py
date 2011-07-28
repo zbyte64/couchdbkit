@@ -59,6 +59,33 @@ class DocumentViewMixin(AdminViewMixin):
                                        self.admin.get_readonly_fields(self.request),
                                        model_admin=self.admin)
         return admin_form
+    
+    def get_form_class(self):
+        """
+        Returns the form class to use in this view
+        """
+        from couchdbkit.ext.django.forms import DocumentForm
+        if self.form_class:
+            return self.form_class
+        else:
+            if self.model is not None:
+                # If a model has been explicitly provided, use it
+                model = self.model
+            elif hasattr(self, 'object') and self.object is not None:
+                # If this view is operating on a single object, use
+                # the class of that object
+                model = self.object.__class__
+            else:
+                # Try to get a queryset and extract the model class
+                # from that
+                model = self.get_queryset().model
+            #fields = fields_for_document(model)
+            class CustomDocumentForm(DocumentForm):
+                class Meta:
+                    document = model
+                    form_field_callback = self.admin.formfield_for_field
+            #CustomDocumentForm.base_fields.update(fields)
+            return CustomDocumentForm
 
 class IndexView(DocumentViewMixin, views.ListView):
     template_suffix = 'change_list'
@@ -116,7 +143,7 @@ class CreateView(DocumentViewMixin, views.CreateView):
         if '_addanother' in self.request.POST:
             return HttpResponseRedirect(self.admin.reverse('add'))
         return HttpResponseRedirect(self.admin.reverse('index'))
-
+    
 class UpdateView(DocumentViewMixin, views.UpdateView):
     template_suffix = 'change_form'
     

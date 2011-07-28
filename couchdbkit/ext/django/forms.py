@@ -118,7 +118,7 @@ def document_to_dict(instance, properties=None, exclude=None):
         data[prop_name] = instance[prop_name]
     return data
 
-def fields_for_document(document, properties=None, exclude=None):
+def fields_for_document(document, properties=None, exclude=None, fields_properties_mapping=FIELDS_PROPERTES_MAPPING, form_field_callback=None):
     """
     Returns a ``SortedDict`` containing form fields for the given document.
 
@@ -145,7 +145,7 @@ def fields_for_document(document, properties=None, exclude=None):
         if exclude and prop.name in exclude:
             continue
         property_class_name = prop.__class__.__name__
-        if property_class_name in FIELDS_PROPERTES_MAPPING:
+        if property_class_name in fields_properties_mapping:
             defaults = {
                 'required': prop.required, 
                 'label': capfirst(prop.verbose_name), 
@@ -159,9 +159,13 @@ def fields_for_document(document, properties=None, exclude=None):
                     defaults['choices'] = prop.default_value() + list(
                                     prop.choices)
                     defaults['coerce'] = prop.to_python
-                
-            field_list.append((prop.name, 
-                FIELDS_PROPERTES_MAPPING[property_class_name](**defaults)))
+            
+            if form_field_callback:
+                field = form_field_callback(fields_properties_mapping[property_class_name], **defaults)
+            else:
+                field = fields_properties_mapping[property_class_name](**defaults)
+            
+            field_list.append((prop.name, field))
     return SortedDict(field_list)
 
 class DocumentFormOptions(object):
@@ -169,6 +173,7 @@ class DocumentFormOptions(object):
         self.document = getattr(options, 'document', None)
         self.properties = getattr(options, 'properties', None)
         self.exclude = getattr(options, 'exclude', None)
+        self.form_field_callback = getattr(options, 'form_field_callback', None)
 
 class DocumentFormMetaClass(type):
     def __new__(cls, name, bases, attrs):
@@ -194,7 +199,7 @@ class DocumentFormMetaClass(type):
         if opts.document:
             # If a document is defined, extract form fields from it.
             fields = fields_for_document(opts.document, opts.properties,
-                                         opts.exclude)
+                                         opts.exclude, form_field_callback=opts.form_field_callback)
             # Override default docuemnt fields with any custom declared ones
             # (plus, include all the other declared fields).
             fields.update(declared_fields)

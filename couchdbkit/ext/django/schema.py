@@ -47,12 +47,15 @@ class Options(object):
     """ class based on django.db.models.options. We only keep
     useful bits."""
     
+    abstract = False
+    
     def __init__(self, meta, app_label=None):
         self.module_name, self.verbose_name = None, None
         self.verbose_name_plural = None
         self.object_name, self.app_label = None, app_label
         self.meta = meta
         self.admin = None
+        self.fields = dict()
     
     def contribute_to_class(self, cls, name):
         cls._meta = self
@@ -61,6 +64,9 @@ class Options(object):
         self.object_name = cls.__name__
         self.module_name = self.object_name.lower()
         self.verbose_name = get_verbose_name(self.object_name)
+        
+        for key, value in cls._properties.iteritems():
+            self.fields[key] = value
 
         # Next, apply any overridden values from 'class Meta'.
         if self.meta:
@@ -103,6 +109,21 @@ class Options(object):
         activate(lang)
         return raw
     verbose_name_raw = property(verbose_name_raw)
+    
+    def get_field(self, name):
+        if name not in self.fields:
+            from django.db import models
+            raise models.FieldDoesNotExist
+        return self.fields[name]
+    
+    def get_field_by_name(self, name):
+        if name not in self.fields:
+            from django.db import models
+            raise models.FieldDoesNotExist
+        return self.fields[name]
+    
+    def get_ordered_objects(self):
+        return []
 
 class DocumentMeta(schema.SchemaProperties):
     def __new__(cls, name, bases, attrs):
@@ -151,6 +172,14 @@ class Document(schema.Document):
             db = get_db(app_label)
             cls._db = db
         return db
+    
+    def serializable_value(self, field_name):
+        from django.db.models import FieldDoesNotExist
+        try:
+            field = self._meta.get_field_by_name(field_name)[0]
+        except FieldDoesNotExist:
+            return getattr(self, field_name)
+        return getattr(self, field.attname)
     
 DocumentSchema = schema.DocumentSchema    
 

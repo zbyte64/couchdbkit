@@ -29,7 +29,7 @@ class BaseAdmin(object):
     ordering = None
     
     
-    list_display = ('__unicode__',)
+    list_display = ('__str__',)
     list_display_links = ()
     list_filter = ()
     list_select_related = False
@@ -185,7 +185,7 @@ class BaseAdmin(object):
         return ChangeList
     
     def queryset(self, request):
-        return lambda **kwargs: self.model.view('_all_docs', **kwargs)
+        return lambda **kwargs: self.model.view('_all_docs', include_docs=True, **kwargs)
     
     def get_paginator(self, request, query_set, paginate_by):
         return self.paginator(query_set, paginate_by)
@@ -212,4 +212,16 @@ class DocumentAdmin(BaseAdmin):
     delete = views.DeleteView
     index = views.IndexView
     history = views.HistoryView
+
+"""
+#TO register a schema in the admin:
+
+from django.contrib import admin
+
+from couchdbkit.ext.django.admin.documentadmin import DocumentAdmin
+
+from models import Greeting
+
+admin.site.register([Greeting], DocumentAdmin)
+"""
 

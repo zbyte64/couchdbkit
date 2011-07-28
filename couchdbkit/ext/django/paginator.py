@@ -3,7 +3,7 @@ from django.core.paginator import Paginator as BasePaginator, Page
 class Paginator(BasePaginator):
     def __init__(self, document_or_view, per_page, orphans=0, allow_empty_first_page=True):
         if hasattr(document_or_view, 'view'):
-            self.view = lambda **kwargs: document_or_view.view('_all_docs', **kwargs)
+            self.view = lambda **kwargs: document_or_view.view('_all_docs', include_docs=True, **kwargs)
         else:
             self.view = document_or_view
         self.per_page = per_page

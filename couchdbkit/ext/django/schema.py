@@ -48,6 +48,7 @@ class Options(object):
     useful bits."""
     
     abstract = False
+    ordering = ['_id']
     
     def __init__(self, meta, app_label=None):
         self.module_name, self.verbose_name = None, None
@@ -124,6 +125,14 @@ class Options(object):
     
     def get_ordered_objects(self):
         return []
+    
+    @property
+    def pk(self):
+        class DummyField(object):
+            def __init__(self, **kwargs):
+                for key, value in kwargs.iteritems():
+                    setattr(self, key, value)
+        return DummyField(attname='get_id')
 
 class DocumentMeta(schema.SchemaProperties):
     def __new__(cls, name, bases, attrs):
@@ -180,6 +189,12 @@ class Document(schema.Document):
         except FieldDoesNotExist:
             return getattr(self, field_name)
         return getattr(self, field.attname)
+    
+    def __str__(self):
+        from django.utils.encoding import force_unicode
+        if hasattr(self, '__unicode__'):
+            return force_unicode(self).encode('utf-8')
+        return '%s object' % self.__class__.__name__
     
 DocumentSchema = schema.DocumentSchema    
 
